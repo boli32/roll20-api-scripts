@@ -1,0 +1,15 @@
+{
+    "name": "TreasureData",
+    "script": "TreasureData.js",
+    "version": "Wizards",
+    "previousversions": ["Bespoke"],
+    "description": "# Treasure Data \nThis is a script which doesnt do anything by itself, but defines the state variable 'TDATA', which are used by other programs, specifically **Treasure Generator**.\n > NOTE: You can adjust the version to either 'Wizards' or 'Bespoke' Wizards will generate all the magic items from all wizards of the Coast publications I could find. Bespoke does not include that and just autogenerates more 'standard' items. This, combined wih the ability to add Adventure items, should allow you to balance your adventure better.\n## More Information?\n [See the README](https://github.com/Roll20/roll20-api-scripts/blob/master/TreasureGenerator/README.md)\n## Contributing\nContributions are welcome! Please submit pull requests or report issues on the GitHub repository: [GitHub Repository](https://github.com/Roll20/roll20-api-scripts/issues)",
+    "authors": "Boli",
+    "roll20userid": "3714078",
+    "useroptions": [],
+    "dependencies": [],
+    "modifies": {
+        "state.TreasureData": "read,write"
+    },
+    "conflicts": []
+}
