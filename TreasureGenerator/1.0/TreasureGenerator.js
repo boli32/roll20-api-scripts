@@ -153,25 +153,32 @@ const Generate = (() => {
 			4: { maxLevel: 8, minSpells: 20, maxSpells: 24 },
 			5: { maxLevel: 9, minSpells: 24, maxSpells: 32 }
 		};
+		const integrityModifiers = {
+			"complete": 1,
+			"well_worn": 0.75,
+			"damaged": 0.5,
+			"fragments": 0.25
+		};
+		const integrityLevels = Object.keys(integrityModifiers);
+		const integrity = integrityLevels[Math.floor(Math.random() * integrityLevels.length)];
 		const { maxLevel, minSpells, maxSpells } = tierSettings[tier] || tierSettings[1];
-		let spells = H.getWeightedSpells(maxLevel, minSpells, maxSpells);
+		const adjustedMinSpells = Math.max(1, Math.floor(minSpells * integrityModifiers[integrity]));
+		const adjustedMaxSpells = Math.max(adjustedMinSpells, Math.floor(maxSpells * integrityModifiers[integrity]));
+		let spells = H.getWeightedSpells(maxLevel, adjustedMinSpells, adjustedMaxSpells);
 		const validSpellIDs = H.getAllSpellIDs();
 		const specifiedSpells = spellIDs
 			.filter(id => validSpellIDs.includes(id))
 			.map(id => TDATA.spells[id])
 			.filter(spell => spell.level <= maxLevel && spell.spellbook);
 		spells = [...new Set([...spells, ...specifiedSpells])];
-		const spellbookDescriptions = Object.values(TDATA.descriptions.spellbooks);
+		const spellbookDescriptions = Object.values(TDATA.descriptions.spellbooks).filter(
+			desc => desc.integrity === integrity
+		);
 		const spellbookDescription = spellbookDescriptions[Math.floor(Math.random() * spellbookDescriptions.length)];
 		return {
 			name: spellbookDescription.name,
-			tier,
-			maxLevel,
-			spells: spells.map(spell => ({
-				name: spell.name,
-				level: spell.level,
-				rarity: spell.rarity
-			}))
+			linkingtext: spellbookDescription.linkingtext,
+			spells: spells.map(spell => spell.name)
 		};
 	};
 	return {
@@ -188,6 +195,15 @@ const Generate = (() => {
 			log(Generate.getSpellScroll(1));
 			Utils.sendGMMessage("Hello World");
 			log(Generate.getSpellBook(1));
+			log(Generate.getSpellBook(1));
+			log(Generate.getSpellBook(2));
+			log(Generate.getSpellBook(2));
+			log(Generate.getSpellBook(3));
+			log(Generate.getSpellBook(3));
+			log(Generate.getSpellBook(4));
+			log(Generate.getSpellBook(4));
+			log(Generate.getSpellBook(5));
+			log(Generate.getSpellBook(6));
 			
 		};
 		return {
