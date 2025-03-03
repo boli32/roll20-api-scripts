@@ -22,26 +22,29 @@ var TreasureGenerator = TreasureGenerator || (function () {
 		version: TreasureGenerator_Version,
 		verboseErrorLogging: true,
 		readableJSON: true,
-		DnDVersion: 2014
+		DnDVersion: 2014,
+		unique: {}
 	};
 	const loadTreasureGeneratorData = () => {
 		initializeTreasureGeneratorState();
 		TREASURE_GENERATOR.version = state.TREASURE_GENERATOR.version || TreasureGenerator_Version;
 		TREASURE_GENERATOR.verboseErrorLogging = state.TREASURE_GENERATOR.verboseErrorLogging || true;
 		TREASURE_GENERATOR.DnDVersion = state.TREASURE_GENERATOR.DnDVersion || 2014;
+		TREASURE_GENERATOR.unique = state.TREASURE_GENERATOR.unique || {};
 	};
 	const saveTreasureGeneratorData = () => {
 		state.TREASURE_GENERATOR.version = TREASURE_GENERATOR.version;
 		state.TREASURE_GENERATOR.verboseErrorLogging = TREASURE_GENERATOR.verboseErrorLogging;
 		state.TREASURE_GENERATOR.DnDVersion = TREASURE_GENERATOR.DnDVersion;
-		
+		state.TREASURE_GENERATOR.unique = TREASURE_GENERATOR.unique;
 	};
 	const initializeTreasureGeneratorState = (forced = false) => {
 		if (!state.TREASURE_GENERATOR || Object.keys(state.TREASURE_GENERATOR).length === 0 || forced) {
 			state.TREASURE_GENERATOR = {
 				version: TreasureGenerator_Version,
 				verboseErrorLogging: true,
-				DnDVersion: 2014
+				DnDVersion: 2014,
+				unique: {}
 			}
 			Utils.sendGMMessage("TreasureGenerator has been initialized.");
 		}
@@ -60,17 +63,26 @@ var TreasureGenerator = TreasureGenerator || (function () {
 			TREASURE_GENERATOR.verboseErrorLogging = (value === 'true');
 			saveQuestTrackerData();
 		};
+		const clearUnique = () => {
+			TREASURE_GENERATOR.unique = {};
+			saveQuestTrackerData();
+		};
 		const inputAlias = (command) => {
 			const aliases = {
 				'!treasure': '!treasure-menu action=main'
 			};
 			return aliases[command] || command;
 		};
+		const toggleDnDVersion = () => {
+			TREASURE_GENERATOR.DnDVersion = TREASURE_GENERATOR.DnDVersion === 2014 ? 2024 : 2014;
+			saveTreasureGeneratorData();
+		};
 		return {
 			sendGMMessage,
 			sendMessage,
 			toggleVerboseError,
-			inputAlias
+			inputAlias,
+			clearUnique
 		};
 	})(); 
 
@@ -121,11 +133,18 @@ const Generate = (() => {
 		}
 	};
 	const getSpellScroll = (level, spellID = null) => {
+		if (!TREASURE_GENERATOR.unique.scrolls) {
+			TREASURE_GENERATOR.unique.scrolls = new Set();
+		}
 		if (spellID) {
 			if (!H.getAllSpellIDs().includes(spellID)) return null;
 			const spell = TDATA.spells[spellID];
-			const scrollDescriptions = Object.values(TDATA.descriptions.scrolls);
-			const scrollDescription = scrollDescriptions[Math.floor(Math.random() * scrollDescriptions.length)];
+			const availableScrolls = Object.entries(TDATA.descriptions.scrolls).filter(([key, scroll]) =>
+				spell.classes.includes(scroll.type) && !TREASURE_GENERATOR.unique.scrolls.has(key)
+			);
+			if (availableScrolls.length === 0) return null;
+			const [scrollKey, scrollDescription] = availableScrolls[Math.floor(Math.random() * availableScrolls.length)];
+			TREASURE_GENERATOR.unique.scrolls.add(scrollKey);
 			return {
 				name: scrollDescription.name,
 				spell: spell.name,
@@ -137,15 +156,23 @@ const Generate = (() => {
 		const matchingSpells = Object.values(TDATA.spells).filter(spell =>
 			spell.level === level && spell.version.includes(TREASURE_GENERATOR.DnDVersion)
 		);
+		if (matchingSpells.length === 0) return null;
 		const spell = matchingSpells[Math.floor(Math.random() * matchingSpells.length)];
-		const scrollDescriptions = Object.values(TDATA.descriptions.scrolls);
-		const scrollDescription = scrollDescriptions[Math.floor(Math.random() * scrollDescriptions.length)];
+		const availableScrolls = Object.entries(TDATA.descriptions.scrolls).filter(([key, scroll]) =>
+			spell.classes.includes(scroll.type) && !TREASURE_GENERATOR.unique.scrolls.has(key)
+		);
+		if (availableScrolls.length === 0) return null;
+		const [scrollKey, scrollDescription] = availableScrolls[Math.floor(Math.random() * availableScrolls.length)];
+		TREASURE_GENERATOR.unique.scrolls.add(scrollKey);
 		return {
 			name: scrollDescription.name,
 			spell: spell.name
 		};
 	};
 	const getSpellBook = (tier, spellIDs = []) => {
+		if (!TREASURE_GENERATOR.unique.spellbooks) {
+			TREASURE_GENERATOR.unique.spellbooks = new Set();
+		}
 		const tierSettings = {
 			1: { maxLevel: 2, minSpells: 4, maxSpells: 8 },
 			2: { maxLevel: 4, minSpells: 8, maxSpells: 16 },
@@ -171,10 +198,12 @@ const Generate = (() => {
 			.map(id => TDATA.spells[id])
 			.filter(spell => spell.level <= maxLevel && spell.spellbook);
 		spells = [...new Set([...spells, ...specifiedSpells])];
-		const spellbookDescriptions = Object.values(TDATA.descriptions.spellbooks).filter(
-			desc => desc.integrity === integrity
+		const availableDescriptions = Object.entries(TDATA.descriptions.spellbooks).filter(([key, desc]) =>
+			desc.integrity === integrity && !TREASURE_GENERATOR.unique.spellbooks.has(key)
 		);
-		const spellbookDescription = spellbookDescriptions[Math.floor(Math.random() * spellbookDescriptions.length)];
+		if (availableDescriptions.length === 0) return null;
+		const [spellbookKey, spellbookDescription] = availableDescriptions[Math.floor(Math.random() * availableDescriptions.length)];
+		TREASURE_GENERATOR.unique.spellbooks.add(spellbookKey);
 		return {
 			name: spellbookDescription.name,
 			linkingtext: spellbookDescription.linkingtext,
